@@ -1,3 +1,7 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/phelmkamp/gocomps.svg)](https://pkg.go.dev/github.com/phelmkamp/gocomps)
+[![Go Report Card](https://goreportcard.com/badge/github.com/phelmkamp/gocomps)](https://goreportcard.com/report/github.com/phelmkamp/gocomps)
+
+
 # gocomps
 A component-based framework for Go
 
@@ -28,6 +32,11 @@ func b(ctx context.Context, props map[string]any) component.Component {
 	fmt.Println("b", props)
 	return component.New(ba, map[string]any{"name": "ba"})
 }
+
+func main() {
+	root := component.New(root, map[string]any{"name": "root"})
+	component.Run(context.Background(), root)
+}
 ```
 
 ### HTTP Handler
@@ -40,7 +49,7 @@ func handle(ctx context.Context, props handler.Props) component.Component {
 	onGreet := func(s string) {
 		props.W.Write([]byte(s))
 	}
-	return component.New(service, serviceProps{name: name, greet: onGreet})
+	return component.New(greetSvc, crud.NewWriteProps(name, onGreet, nil))
 }
 
 func main() {

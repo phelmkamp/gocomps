@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/phelmkamp/gocomps/component"
+	"github.com/phelmkamp/gocomps/crud"
 	"github.com/phelmkamp/gocomps/handler"
 )
 
@@ -17,16 +18,11 @@ func handle(ctx context.Context, props handler.Props) component.Component {
 	onGreet := func(s string) {
 		props.W.Write([]byte(s))
 	}
-	return component.New(service, serviceProps{name: name, greet: onGreet})
+	return component.New(greetSvc, crud.NewWriteProps(name, onGreet, nil))
 }
 
-type serviceProps struct {
-	name  string
-	greet func(string)
-}
-
-func service(ctx context.Context, props serviceProps) component.Component {
-	props.greet("hello, " + props.name)
+func greetSvc(ctx context.Context, props crud.WriteProps[string]) component.Component {
+	props.OnReturn("hello, " + props.V)
 	return component.Component{}
 }
 
