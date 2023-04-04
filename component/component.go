@@ -6,6 +6,7 @@ package component
 
 import (
 	"context"
+	"sync"
 )
 
 // Component is a reusable piece of functionality.
@@ -30,9 +31,15 @@ func New[P any](run RunFunc[P], props P) Component {
 func NewGroup(comps ...Component) Component {
 	return Component{
 		run: func(ctx context.Context, props any) Component {
-			for _, c := range comps {
-				Run(ctx, c)
+			wg := &sync.WaitGroup{}
+			wg.Add(len(comps))
+			for i := range comps {
+				go func(c Component) {
+					defer wg.Done()
+					Run(ctx, c)
+				}(comps[i])
 			}
+			wg.Wait()
 			return Component{}
 		},
 	}
@@ -40,8 +47,16 @@ func NewGroup(comps ...Component) Component {
 
 // Run walks the tree made up of the given Component plus its descendants and runs each one.
 func Run(ctx context.Context, comp Component) {
-	if comp.run != nil {
-		child := comp.run(ctx, comp.props)
-		Run(ctx, child)
+	if comp.run == nil {
+		// nothing to do
+		return
 	}
+
+	if ctx.Err() != nil {
+		// context is done
+		return
+	}
+
+	child := comp.run(ctx, comp.props)
+	Run(ctx, child)
 }
