@@ -6,8 +6,7 @@ package crud
 
 // ReadProps are properties for reading a value.
 type ReadProps[T any] struct {
-	OnReturn func(T)
-	OnError  func(error)
+	Return func(T)
 }
 
 // WriteProps are properties for writing and reading a value.
@@ -17,11 +16,11 @@ type WriteProps[T any] struct {
 }
 
 // NewReadProps creates a new ReadProps.
-func NewReadProps[T any](onRet func(T), onErr func(error)) ReadProps[T] {
-	return ReadProps[T]{OnReturn: onRet, OnError: onErr}
+func NewReadProps[T any](onRet func(T)) ReadProps[T] {
+	return ReadProps[T]{Return: onRet}
 }
 
 // NewWriteProps creates a new WriteProps.
-func NewWriteProps[T any](v T, onRet func(T), onErr func(error)) WriteProps[T] {
-	return WriteProps[T]{ReadProps: NewReadProps(onRet, onErr), V: v}
+func NewWriteProps[T any](v T, onRet func(T)) WriteProps[T] {
+	return WriteProps[T]{ReadProps: NewReadProps(onRet), V: v}
 }

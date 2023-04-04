@@ -18,11 +18,11 @@ func handle(ctx context.Context, props handler.Props) component.Component {
 	onGreet := func(s string) {
 		props.W.Write([]byte(s))
 	}
-	return component.New(greetSvc, crud.NewWriteProps(name, onGreet, nil))
+	return component.New(greetSvc, crud.NewWriteProps(name, onGreet))
 }
 
 func greetSvc(ctx context.Context, props crud.WriteProps[string]) component.Component {
-	props.OnReturn("hello, " + props.V)
+	props.Return("hello, " + props.V)
 	return component.Component{}
 }
 
