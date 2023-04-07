@@ -9,7 +9,7 @@ A component-based framework for Go
 
 ### Simple
 
-See [testdata/main.go](testdata/main.go).
+See [examples/simple/main.go](examples/simple/main.go).
 
 ```go
 func root(ctx context.Context, props map[string]any) component.Component {
@@ -41,7 +41,7 @@ func main() {
 
 ### HTTP Handler
 
-See [testdata/http/main.go](testdata/http/main.go).
+See [examples/http/main.go](examples/http/main.go).
 
 ```go
 func handle(ctx context.Context, props handler.Props) component.Component {
@@ -49,10 +49,51 @@ func handle(ctx context.Context, props handler.Props) component.Component {
 	onGreet := func(s string) {
 		props.W.Write([]byte(s))
 	}
-	return component.New(greetSvc, crud.NewWriteProps(name, onGreet, nil))
+	return component.New(greetSvc, crud.NewWriteProps(name, onGreet))
 }
 
 func main() {
 	http.ListenAndServe(":8080", handler.New(handle))
+}
+```
+
+### Parallel
+
+See [examples/parallel/main.go](examples/parallel/main.go).
+
+```go
+func sum(ctx context.Context, p props) component.Component {
+	if len(p.in) <= p.batchSize {
+		return apply(ctx, p)
+	}
+	return combine(ctx, p)
+}
+
+func split(ctx context.Context, p props) component.Component {
+	return component.NewGroup(
+		component.New(sum, props{in: p.in[:len(p.in)/2], out: p.out, batchSize: p.batchSize}),
+		component.New(sum, props{in: p.in[len(p.in)/2:], out: p.out, batchSize: p.batchSize}),
+	)
+}
+
+func apply(ctx context.Context, p props) component.Component {
+	var n int
+	for _, v := range p.in {
+		n += v
+	}
+	p.out <- n
+	return component.Component{}
+}
+
+func combine(ctx context.Context, p props) component.Component {
+	res := make(chan int)
+	go func() {
+		var n int
+		for i := 0; i < 2; i++ {
+			n += <-res
+		}
+		p.out <- n
+	}()
+	return component.New(split, props{in: p.in, out: res, batchSize: p.batchSize})
 }
 ```
