@@ -5,7 +5,6 @@
 package handler
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/phelmkamp/gocomps/component"
@@ -18,7 +17,7 @@ type Props struct {
 }
 
 // New creates a new http.Handler that invokes run on every request.
-func New(run func(ctx context.Context, props Props) (child component.Component)) http.Handler {
+func New(run component.RunFunc[Props]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		component.Run(r.Context(), component.New(run, Props{W: w, R: r}))
 	})
