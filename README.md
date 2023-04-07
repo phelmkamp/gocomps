@@ -97,3 +97,31 @@ func combine(ctx context.Context, p props) component.Component {
 	return component.New(split, props{in: p.in, out: res, batchSize: p.batchSize})
 }
 ```
+
+### State
+
+See [examples/state/main.go](examples/state/main.go).
+
+```go
+func read(ctx context.Context, done chan struct{}) component.Component {
+	type state struct {
+		email string
+		valid bool
+	}
+	emailState, setEmailState := component.UseState(ctx, state{})
+
+	if !emailState.valid {
+		if len(emailState.email) > 0 {
+			fmt.Println("invalid input:", emailState.email)
+		}
+
+		onChangeEmail := func(s string) {
+			setEmailState(state{email: s, valid: strings.Contains(s, "@")})
+		}
+		return component.New(input, onChangeEmail)
+	}
+
+	done <- struct{}{}
+	return component.Component{}
+}
+```
