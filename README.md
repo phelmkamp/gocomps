@@ -46,10 +46,15 @@ See [examples/http/main.go](examples/http/main.go).
 ```go
 func handle(ctx context.Context, props handler.Props) component.Component {
 	name := props.R.URL.Query().Get("name")
-	onGreet := func(s string) {
-		props.W.Write([]byte(s))
+	onGreet := func(msg string, err error) {
+		if err != nil {
+			props.W.WriteHeader(http.StatusBadRequest)
+			props.W.Write([]byte(err.Error()))
+			return
+		}
+		props.W.Write([]byte(msg))
 	}
-	return component.New(greetSvc, crud.NewWriteProps(name, onGreet))
+	return component.New(greetSvc, greetProps{name: name, greet: onGreet})
 }
 
 func main() {
@@ -123,5 +128,39 @@ func read(ctx context.Context, done chan struct{}) component.Component {
 
 	done <- struct{}{}
 	return component.Component{}
+}
+```
+
+### Reducer
+
+See [examples/reducer/main.go](examples/reducer/main.go).
+
+```go
+func reduce(i int, action string) int {
+	switch action {
+	case "add":
+		return i + 1
+	case "subtract":
+		return i - 1
+	default:
+		return i
+	}
+}
+
+func read(ctx context.Context, done chan struct{}) component.Component {
+	i, dispatch := component.UseReducer(ctx, reduce, 0)
+
+	fmt.Println(i)
+
+	onChange := func(s string) {
+		if s == "+" {
+			dispatch("add")
+		} else if s == "-" {
+			dispatch("subtract")
+		} else {
+			done <- struct{}{}
+		}
+	}
+	return component.New(input, onChange)
 }
 ```
